@@ -1,0 +1,36 @@
+# Antigravity Agent & GitHub GUI Workflow
+
+This flowchart illustrates how an agentic IDE (like Antigravity) interacts with the standard GitHub GUI review process.
+
+```mermaid
+graph TD
+    %% Styles for nodes
+    classDef human fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:black;
+    classDef ai fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:black;
+    classDef github fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:black;
+
+    Start([Start: New Task]) --> H_Prompt:::human;
+
+    subgraph "Local Agent Environment (Antigravity)"
+        H_Prompt[Human Prompts Agent in IDE] --> AI_Plan[Agent Creates Plan & Writes Code]:::ai;
+        AI_Plan --> AI_Test[Agent Runs Tests]:::ai;
+        AI_Test -- Fails --> AI_Plan;
+        AI_Test -- Passes --> AI_Commit[Agent 'git commits' changes]:::ai;
+        AI_Commit --> AI_Push[Agent pushes to new branch named 'feature/ai-task']:::ai;
+    end
+
+    AI_Push --> GH_Branch:::github;
+
+    subgraph "GitHub GUI (Browser)"
+        GH_Branch[GitHub detects new branch] --> H_OpenPR[Human clicks 'Compare & pull request']:::human;
+        H_OpenPR --> GH_PRView[GitHub Displays Pull Request UI]:::github;
+        GH_PRView --> H_Review{Human Reviews Files Changed}:::human;
+        
+        H_Review -- "Needs Work" --> H_Comment[Human leaves comments on PR]:::human;
+        H_Comment --> H_Prompt;
+        
+        H_Review -- "Approved" --> H_Merge[Human clicks 'Merge pull request']:::human;
+        H_Merge --> GH_Main[Code merged into 'main' branch]:::github;
+    end
+
+    GH_Main --> End([End: Task Complete]);
