@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Income Generator - Opportunities Dashboard</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="glass-container">
+        <header>
+            <div class="header-top">
+                <h1>Remote Income Generator</h1>
+                <button id="runBtn" class="primary-btn">Run Generator</button>
+            </div>
+            <p class="subtitle">Curated high-income opportunities for Daniel Schley</p>
+            <div id="status" class="status-msg"></div>
+        </header>
+
+        <main id="dashboard">
+            <div class="loading">Click "Run Generator" to find opportunities.</div>
+        </main>
+    </div>
+
+    <script>
+        const runBtn = document.getElementById('runBtn');
+        const status = document.getElementById('status');
+        const dashboard = document.getElementById('dashboard');
+
+        runBtn.addEventListener('click', async () => {
+            runBtn.disabled = true;
+            runBtn.innerText = 'Running...';
+            status.innerText = 'Scraping and ranking... This may take a moment.';
+            dashboard.innerHTML = '<div class="loading">Scanning the web for high-income roles...</div>';
+
+            try {
+                const response = await fetch('/run', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    renderResults(data.results);
+                    status.innerText = 'Successfully updated!';
+                } else {
+                    status.innerText = 'Error running generator.';
+                }
+            } catch (e) {
+                status.innerText = 'Server error. Is the backend running?';
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerText = 'Run Generator';
+            }
+        });
+
+        async function loadResults() {
+            try {
+                const response = await fetch('ranked_results.json');
+                const results = await response.json();
+                renderResults(results);
+            } catch (e) {
+                console.log('No results found yet.');
+            }
+        }
+
+        function renderResults(results) {
+            const container = document.getElementById('dashboard');
+            container.innerHTML = '';
+
+            const tiers = [
+                "Section 1 – Remote Quick/Easy Income",
+                "Section 2 – AI Operations Expert Gigs",
+                "Section 3 – GLG-Style Expert & Testing Platforms"
+            ];
+
+            tiers.forEach(tier => {
+                const tierResults = results.filter(r => r.tier === tier);
+
+                const section = document.createElement('section');
+                section.innerHTML = `<h2>${tier}</h2>`;
+
+                if (tierResults.length === 0) {
+                    section.innerHTML += '<div class="loading" style="padding: 10px; font-size: 0.8rem;">No matches in this tier yet.</div>';
+                } else {
+                    tierResults.forEach((item, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `
+                            <div class="card-content">
+                                <div class="rank-badge">#${index + 1}</div>
+                                <h3><a href="${item.link}" target="_blank">${item.title}</a></h3>
+                                <div class="meta">
+                                    <span>Score: ${item.score}</span>
+                                    <span class="url-hint">${new URL(item.link).hostname}</span>
+                                </div>
+                            </div>
+                        `;
+                        section.appendChild(card);
+                    });
+                }
+                container.appendChild(section);
+            });
+        }
+
+        loadResults();
+    </script>
+</body>
+
+</html>
